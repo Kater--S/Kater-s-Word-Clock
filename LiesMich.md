@@ -55,6 +55,8 @@ In der Datei werden oben die Parameter für die Matrix gesetzt, also die Außenm
 
 Als Druckmaterial hat sich schwarzes PLA bewährt. Die Lichtverluste gegenüber dem weißen Material machen sich nicht wesentlich bemerkbar, dafür gelangt aber kein Störlicht in benachbarte Zellen, auch bei den vergleichsweise dünnen Wänden.
 
+Hinweis: Je nach Slicerprogramm und Druckparametern darin kann es vorkommen, dass die Wände nicht gerendert werden. In diesem Fall muss die Wandstärke höher gesetzt werden. Die voreingestellten 0,4 mm reichen aber für die Stabilität und auch Licht-Dichtigkeit aus.
+
 ## Aufbau
 Der Innenrahmen des RIBBA-Rahmens wird nicht benötigt, ebensowenig das Passepartout. In den Rahmen kommen jetzt der Reihe nach:
 1. Die vordere, originale Glasplatte

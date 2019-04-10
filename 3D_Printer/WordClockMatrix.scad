@@ -12,7 +12,7 @@
 frame = 230;    // frame size in mm (x and y)
 numCells = 13;  // number of cells (x and y)
 cell = 1000/60; // cell size in mm; LED strip has 60 LEDs per meter
-wall = 0.4;     // wall thickness
+wall = 0.5;     // wall thickness -- may have to be increased if your slicer omits walls!
 height = 10;    // grid height in mm
 foot = 4;       // foot size in mm (diamonds in grid junctions)
 /*
