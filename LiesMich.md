@@ -39,7 +39,7 @@ Die LED-Streifen werden waagerecht auf die Rückwand des Rahmens geklebt, als Hi
 Die Streifen werden im Zickzack verlegt, d.h. der oberste Streifen läuft von links nach rechts (Din → Dout ist auf dem Strip aufgedruckt), der nächste dann von rechts nach links und so weiter. Der Din-Anschluss oben links ist mit dem µController verbunden, der Dout-Anschluss oben rechts wird in den Din der zweiten Reihe (ebenfalls rechts) geführt. Deren Dout links geht dann in den Din der dritten Reihe usw., der letzte Dout bleibt dann offen. Das zweite PDF zeigt auch die Verkabelung: Grün für die Datenleitung, Rot für 5 Volt, Schwarz für Masse.
 
 Die Stromversorgung wird am besten folgendermaßen durchgeführt: Auf der rechten Seite werden alle Vcc-Anschlüsse miteinander verbunden und mit +5V (Vin am µController) verbunden, auf der linken Seite entsprechend alle Gnd-Anschlüsse, die wiederum mit der Masse (G oder Gnd) verbunden werden.
-![Startphase](Pix/Cabling.jpg)
+![Startphase](Pix/Cabling.png)
 
 Als Problem beim Löten könnte sich herausstellen, die jeweils 13 Lötstellen für Plus und Masse der Reihe nach zu verbinden. Ich hatte das so gemacht, dass ich im Kabel alle ca. 2,5 cm ein paar Millimeter abisoliert habe, die freie Stelle geknickt, verzinnt und dann auf den Streifen gelötet habe. Das ist etwas fummelig. Eine (noch nicht getestete) Alternatividee wäre es, für jeden Streifen den Plus-Anschluss auf der einen und den für Masse auf der anderen Seite per Litze nach hinten zu führen und diese je 13 Kabel in je einer Lüsterklemme zusammenzufassen und mit der restlichen Schaltung zu verbinden.
 
