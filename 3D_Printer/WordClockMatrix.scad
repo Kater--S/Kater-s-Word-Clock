@@ -15,6 +15,8 @@ cell = 1000/60; // cell size in mm; LED strip has 60 LEDs per meter
 wall = 0.5;     // wall thickness -- may have to be increased if your slicer omits walls!
 height = 10;    // grid height in mm
 foot = 4;       // foot size in mm (diamonds in grid junctions)
+factor = 1.2;   // sizing for wall receptors
+
 /*
 // large RIBBA (50 cm, 12x12 LEDs, large cells)
 frame = 500;    // frame size in mm (x and y)
@@ -86,7 +88,6 @@ module MatrixQuarter(withFrame = false) {
                 cube([2*foot, 2*foot, , 3*wall]);
             }
         // wall receptors
-        factor = 2.2;
         translate([margin + i * cell, margin + (numQuarterCells-1) * cell, 0])
           union() {
             // walls
@@ -127,8 +128,14 @@ module FitTest() {
     num = 10;
     dist = 10;
     cube([(num+1)*dist, cell/3, wall]);
-    cube([(num+1)*dist, wall, height]);
-      for (i = [0:num]) {
+    difference() {
+        cube([(num+3)*dist, wall, height]);
+        translate([(num+1)*dist, -0.1, wall])
+            cube([wall, cell, height-2*wall]);
+    }
+    translate([(num+1)*dist+2,0,0])
+        cylinder(d=3, h=height, $fn=40);
+    for (i = [0:num]) {
         factor = 1 + (i+2)*0.1;
         echo(factor);
         translate([dist/2 + i * dist, 0, 0])
@@ -138,12 +145,12 @@ module FitTest() {
             translate([+wall * factor, 0, 0])
             cube([wall, cell / 3, height]);
           }
-      }
+    }
       
   // => optimal factor: 2.2 <=> total gap = 2 * wall * 2.2 = 1.76
 }
 
-//FitTest();
+FitTest();
 //SingleMatrix();
 //CompoundMatrix(dist=10);     // dist=0 to view assembled quarters -- not for printing!
-MatrixQuarter();
+//MatrixQuarter();
