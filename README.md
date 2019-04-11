@@ -1,3 +1,5 @@
-Kater's Word Clock
+# Kater's Word Clock
 
-For now, please see German version in LiesMich.md. English version will be provided in the future.
+![04:12 PM](Pix/Clock.jpg)
+
+For now, please see German version in [LiesMich.md](LiesMich.md). English version will be provided in the future.

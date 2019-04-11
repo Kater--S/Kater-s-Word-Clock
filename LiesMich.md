@@ -1,7 +1,7 @@
 
 # Kater's Word Clock
 
-![Startphase](Pix/Clock.jpg)
+![16:12 Uhr](Pix/Clock.jpg)
 
 Hier kommt meine persönliche Implementierung einer Word Clock. Ziel war es, möglichst wenig baulichen Aufwand zu haben und die Einzelteile aus dem Bastelfundus zu nehmen oder selbst zu erstellen.
 
