@@ -34,14 +34,28 @@ Einfacher geht es nicht: Ein ESP8266-Modul, das mit Port D2 (das ist konfigurier
 
 Das Controllermodul kann optional auf ein Breadboard (oder zwei, je nach Format) aufgesteckt werden, um die Anschlüsse zu realisieren, ansonsten wird alles direkt angesteckt oder angelötet. Die Breadboards haben normalerweise eine Klebefläche auf der Unterseite, mit der das Modul dann bequem an der Rückwand befestigt werden kann.
 
-Die LED-Streifen werden waagerecht auf die Rückwand des Rahmens geklebt, als Hilfe gibt es bei den Plotter-Dateien ein PDF mit dem Layout. Das kann man ausdrucken und zum Anzeichnen auf der RIBBA-Rückwand nehmen, um die Streifen exakt aufkleben zu können. Manchmal sind die LED-Stips nicht ganz exakt gefertigt – am besten genau aufpassen, dass die LEDs möglichst mittig in den Zellen zu liegen kommen.
+Die LED-Streifen werden waagerecht auf die Rückwand des Rahmens geklebt, als Hilfe gibt es bei den Plotter-Dateien ein PDF mit dem Layout. Das kann man ausdrucken und zum Anzeichnen auf der RIBBA-Rückwand nehmen, um die Streifen exakt aufkleben zu können. Manchmal sind die LED-Stips nicht ganz exakt gefertigt – am besten genau aufpassen, dass die LEDs möglichst mittig in den Zellen zu liegen kommen. Zur Sicherheit können die Streifen auch zusätzlich mit etwas Heißkleber fixiert werden.
 
 Die Streifen werden im Zickzack verlegt, d.h. der oberste Streifen läuft von links nach rechts (Din → Dout ist auf dem Strip aufgedruckt), der nächste dann von rechts nach links und so weiter. Der Din-Anschluss oben links ist mit dem µController verbunden, der Dout-Anschluss oben rechts wird in den Din der zweiten Reihe (ebenfalls rechts) geführt. Deren Dout links geht dann in den Din der dritten Reihe usw., der letzte Dout bleibt dann offen. Das zweite PDF zeigt auch die Verkabelung: Grün für die Datenleitung, Rot für 5 Volt, Schwarz für Masse.
 
 Die Stromversorgung wird am besten folgendermaßen durchgeführt: Auf der rechten Seite werden alle Vcc-Anschlüsse miteinander verbunden und mit +5V (Vin am µController) verbunden, auf der linken Seite entsprechend alle Gnd-Anschlüsse, die wiederum mit der Masse (G oder Gnd) verbunden werden.
 ![Startphase](Pix/Cabling.png)
 
-Als Problem beim Löten könnte sich herausstellen, die jeweils 13 Lötstellen für Plus und Masse der Reihe nach zu verbinden. Ich hatte das so gemacht, dass ich im Kabel alle ca. 2,5 cm ein paar Millimeter abisoliert habe, die freie Stelle geknickt, verzinnt und dann auf den Streifen gelötet habe. Das ist etwas fummelig. Eine (noch nicht getestete) Alternatividee wäre es, für jeden Streifen den Plus-Anschluss auf der einen und den für Masse auf der anderen Seite per Litze nach hinten zu führen und diese je 13 Kabel in je einer Lüsterklemme zusammenzufassen und mit der restlichen Schaltung zu verbinden.
+Als Problem beim Löten könnte sich herausstellen, die jeweils 13 Lötstellen für Plus und Masse der Reihe nach zu verbinden. Da gibt es verschiedene Optionen, von denen man sich die aussuchen sollte, die einem am besten passt:
+
+### A: Girlande
+Ich hatte das so gemacht, dass ich im Kabel alle ca. 2,5 cm ein paar Millimeter abisoliert habe, die freie Stelle geknickt, verzinnt und dann auf den Streifen gelötet habe. Das ist etwas fummelig, funktioniert grundsätzlich aber gut.
+
+### B: Stern
+Eine (noch nicht getestete) Alternatividee wäre es, für jeden Streifen den Plus-Anschluss auf der einen und den für Masse auf der anderen Seite per Litze nach hinten zu führen und diese je 13 Kabel in je einer Lüsterklemme zusammenzufassen und mit der restlichen Schaltung zu verbinden.
+
+### C: Baum
+Ein weiterer Vorschlag wäre, die Anschlüsse von jeweils zwei Streifen zusammenzuführen und als ein Kabel weiterzuführen. Das Ganze dann kaskadiert, bis nur noch ein einziges Kabel mit dem Rest der Schaltung zu verbinden ist.
+
+### D: Schiene
+Oder man führt je ein blankes Kabel (links für Masse, rechts für +5V) im Abstand an den Streifen vorbei und zieht dann kurze Querverbindungen. Die gemeinsame Schiene wird dann auf der anderen Seite mit der Schaltung verbunden.
+
+Nicht so optimal wäre es übrigens, die Masse- und Plus-Leitungen analog zu den Datenleitungen im Zickzack durch alle Streifen zu führen. Das kann zur Folge haben, dass am Ende dann nicht mehr die volle Spannung ankommt – zu sehen daran, dass die blauen LEDs nicht mehr voll aufleuchten können und die Farben zum Ende hin „vergilben“.
 
 Zur Kabelführung auf die Rückseite mit der Elektronik kann man an Ecken oder Rändern mit einem Seitenschneider kleine Aussparungen „herausknipsen“. Die Kabel sollten dann auf der Rückseite mit Klebestreifen fixiert werden.
 
