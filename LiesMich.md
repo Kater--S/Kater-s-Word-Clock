@@ -3,9 +3,9 @@
 
 ![16:12 Uhr](Pix/Clock.jpg)
 
-Hier kommt meine persönliche Implementierung einer Word Clock. Ziel war es, möglichst wenig baulichen Aufwand zu haben und die Einzelteile aus dem Bastelfundus zu nehmen oder selbst zu erstellen.
+Hier kommt meine persönliche Implementierung einer Word Clock. Ziel war es, möglichst wenig baulichen Aufwand zu haben und die Einzelteile aus dem Bastelfundus zu nehmen oder selbst zu erstellen. Ergänzt habe ich Erfahrungen und Anregungen von Leuten, die die Uhr nachgebaut haben — herzlichen Dank dafür.
 
-So verwende ich für die Elektronik einen WS2812-Strip und ein NodeMCU-Modul (mit einem ESP8266), dazu kommt dann noch ein wenig Kabelmaterial sowie der obligatorische Angstkondensator und -widerstand, außerdem ein USB-Netzteil mit USB-Kabel. Die „Mechanik“ besteht aus einem RIBBA-Rahmen von IKEA, einem 3D-gedruckten Gitter sowie einer mittels Schneidplotter angefertigten Buchstabenmaske, dazu dann noch ein Transparentpapier als Diffusor und ein paar Klebestreifen. Es gibt kein RTC-Modul und keine Bedienelemente, da die Uhr sich die Zeit automatisch per NTP aus dem Netz holt und ansonsten keine steuerbaren Funktionen hat. Wenn es mal eine Konfigurationsmöglichkeit geben soll, würde ich das als Webserver implementieren (s.u.). Die Hardware selbst hat aber noch reichlich Reserven, so dass man da auch noch eine Menge an Erweiterungen anbauen könnte.
+Für die Elektronik verwende ich einen WS2812-Strip und ein NodeMCU-Modul (mit einem ESP8266), dazu kommt dann noch ein wenig Kabelmaterial sowie der obligatorische Angstkondensator und -widerstand, außerdem ein USB-Netzteil mit USB-Kabel. Die „Mechanik“ besteht aus einem RIBBA-Rahmen von IKEA, einem 3D-gedruckten Gitter sowie einer mittels Schneidplotter angefertigten Buchstabenmaske, dazu dann noch ein Transparentpapier als Diffusor und ein paar Klebestreifen. Es gibt kein RTC-Modul und keine Bedienelemente, da die Uhr sich die Zeit automatisch per NTP aus dem Netz holt und ansonsten keine steuerbaren Funktionen hat. Wenn es mal eine Konfigurationsmöglichkeit geben soll, würde ich das als Webserver implementieren (s.u.). Die Hardware selbst hat aber noch reichlich Reserven, so dass man da auch noch eine Menge an Erweiterungen anbauen könnte.
 
 ## Stückliste
 1. IKEA RIBBA Rahmen (23 cm)
@@ -23,6 +23,7 @@ So verwende ich für die Elektronik einen WS2812-Strip und ein NodeMCU-Modul (mi
 ## Firmware
 Ich habe mal sämtliche Zwischenstufen der Firmware ins Repository gepackt (unter `ESP8266`), damit man die Entwicklungsschritte nachvollziehen kann, wenn man denn möchte. Ansonsten einfach die höchste Version verwenden, das ist derzeit `WordClock_V1.3_Nightmode`.
 Die Software ist einigermaßen ausführlich kommentiert und auch nicht allzu kompliziert. Nach dem Booten wird (in `startup()`) als erstes eine Art Hintergrund-Farbverlauf auf die Matrix gelegt (`set_matrix()`). Danach wird versucht, sich ins WLAN einzubuchen, die Zeit per NTP zu holen und schließlich die Zonendefinition für Deutschland zu holen. Damit wird auch die geplante Abschaffung der Sommerzeitumstellung automatisch berücksichtigt. In dieser Phase wird zunächst "`WAN`" angezeigt, dann "`ZEIT`" und schließlich "`DE`" (bzw. "`WZ`", wenn nur die Weltzeit (UTC) angezeigt werden kann). Außerdem zeigt die Uhr zu Beginn eine Art Signatur an.
+
 ![Startphase](Pix/ClockSetupPhase.jpg)
 
 Sobald das Setup beendet ist, wird die Matrix schwarz geschaltet und einmal pro Sekunde die aktuelle Zeit angezeigt (`show_time()`). Der Text zur jeweiligen Uhrzeit wird nach einem relativ einfachen Schema bestimmt (`encode_time()`). Für regionale Abweichungen („_Dreiviertel Zwölf_“ statt „_Viertel vor Zwölf_“ etc.) muss hier angepasst werden; die Matrix braucht dann ggf. auch weitere Änderungen für die benutzten Wörter. Der generierte Text wird anschließend auf die Matrix gelegt (`show_text()`). Dabei wird bei den erleuchteten Pixeln (`set_led()`) wieder der Farbverlauf (`xy2col()`) unterlegt, der zusätzlich jede Sekunde (`action()`) um ein Feld weiterwandert (`change_colorscheme()`). Jede volle Minute wird der Farbverlauf komplett neu zufällig bestimmt (`change_colorscheme(1)`). Außerdem wird dann jeweils festgestellt, ob die Helligkeit für den Nachtmodus heruntergesetzt werden soll (`is_day()`).
@@ -39,6 +40,9 @@ Die LED-Streifen werden waagerecht auf die Rückwand des Rahmens geklebt, als Hi
 Die Streifen werden im Zickzack verlegt, d.h. der oberste Streifen läuft von links nach rechts (Din → Dout ist auf dem Strip aufgedruckt), der nächste dann von rechts nach links und so weiter. Der Din-Anschluss oben links ist mit dem µController verbunden, der Dout-Anschluss oben rechts wird in den Din der zweiten Reihe (ebenfalls rechts) geführt. Deren Dout links geht dann in den Din der dritten Reihe usw., der letzte Dout bleibt dann offen. Das zweite PDF zeigt auch die Verkabelung: Grün für die Datenleitung, Rot für 5 Volt, Schwarz für Masse.
 
 Die Stromversorgung wird am besten folgendermaßen durchgeführt: Auf der rechten Seite werden alle Vcc-Anschlüsse miteinander verbunden und mit +5V (Vin am µController) verbunden, auf der linken Seite entsprechend alle Gnd-Anschlüsse, die wiederum mit der Masse (G oder Gnd) verbunden werden.
+
+Wichtig: Der Draht muss dick genug sein, um den Gesamtstrom zu transportieren, ohne sich zu erwärmen.
+
 ![Startphase](Pix/Cabling.png)
 
 Als Problem beim Löten könnte sich herausstellen, die jeweils 13 Lötstellen für Plus und Masse der Reihe nach zu verbinden. Da gibt es verschiedene Optionen, von denen man sich die aussuchen sollte, die einem am besten passt:
@@ -54,6 +58,8 @@ Ein weiterer Vorschlag wäre, die Anschlüsse von jeweils zwei Streifen zusammen
 
 ### D: Schiene
 Oder man führt je ein blankes Kabel (links für Masse, rechts für +5V) im Abstand an den Streifen vorbei und zieht dann kurze Querverbindungen. Die gemeinsame Schiene wird dann auf der anderen Seite mit der Schaltung verbunden.
+
+Alternativ kann man auch Kupferlackdraht verwenden und direkt auf die jeweiligen Lötpads auflöten (die Lack-Isolierung schmilzt beim Löten). Das geht dann ggf. auch mitten auf der Fläche, so dass eine Schiene auf 1/3 der Breite verläuft, die andere auf 2/3. So bleibt an den Kanten außen genug Platz für die Datenleitung.
 
 Nicht so optimal wäre es übrigens, die Masse- und Plus-Leitungen analog zu den Datenleitungen im Zickzack durch alle Streifen zu führen. Das kann zur Folge haben, dass am Ende dann nicht mehr die volle Spannung ankommt – zu sehen daran, dass die blauen LEDs nicht mehr voll aufleuchten können und die Farben zum Ende hin „vergilben“.
 
@@ -72,6 +78,7 @@ Im Verzeichnis `3D_Printer` schließlich liegt eine OpenSCAD-Quelldatei für das
 Alternativ kann unten am Ende der Quelldatei anstelle des Viertelteils auch ein einzelnes Gitter erzeugt werden, wenn der Drucker die Abmessungen drucken kann. Hierzu anstelle von `MatrixQuarter()` einfach `SingleMatrix()` aufrufen. Zum Testen gibt es noch `CompoundMatrix()`, um vier Viertelteile zu erzeugen; der Parameter `dist` gibt den Abstand der Teile untereinander an. Mit `CompoundMatrix(dist=0)` werden sie direkt ineinandergefügt – nicht zum drucken, sondern nur zur direkten Kontrolle in OpenSCAD. 
 
 Außerdem kann mit `FitTest()` ein Testobjekt gedruckt werden, das bei der Anpassung der Maße für die Wandaufnahmen (trichterförmige Strukturen) helfen kann. Nach dem Druck wird das Teil mit dem Zylinder am rechten Ende an der Sollbruchstelle abgetrennt. Die Wand hat die parametrierte Stärke und kann nun testweise in die verschieden breiten Aufnahmetrichter gedrückt werden, um den passendsten zu finden. Von schmal bis weit entsprechen die Trichter dem Faktor 1,2, dann 1,3, dann 1,4 usw. in Zehntelschritten bis 2,2. Den gefundenen Faktor trägt man oben in der Parameterliste ein, um schließlich die Gitterobjekte zu erzeugen. Dabei sollten die Slicing- und Druck-Parameter nicht geändert werden.
+
 ![FitTest-Objekt](Pix/FitTest.png)
 
 In der Datei werden oben die Parameter für die Matrix gesetzt, also die Außenmaße, Anzahl der LED-Zellen, Zellengröße, Wandstörke, Höhe des Gitters sowie Größe der kleinen rautenförmigen Stabilisierungsstrukturen an den Gitterkreuzungspunkten, außerdem der Faktor für die Wandaufnahmen, der mit dem FitTest-Teil ermittelt wurde. Die Werte für den kleinen RIBBA-Rahmen (23 cm) sind erprobt, die für den großen noch nicht – mit meinem Drucker werde ich da ohnehin noch weiter aufteilen müssen; das wird in einer zukünftigen Version geschehen.
@@ -80,8 +87,10 @@ Als Druckmaterial hat sich schwarzes PLA bewährt. Die Lichtverluste gegenüber 
 
 Hinweis: Je nach Slicerprogramm und Druckparametern darin kann es vorkommen, dass die Wände nicht gerendert werden. In diesem Fall muss die Wandstärke höher gesetzt werden. Die voreingestellten 0,4 mm reichen aber für die Stabilität und auch Licht-Dichtigkeit aus.
 
+Man kann auch auf den Druck komplett verzichten und das Gitter aus Karton bauen, entweder selbst geschnitten oder mit Unterstützung durch einen Schneidplotter.
+
 ## Aufbau
-Der Innenrahmen des RIBBA-Rahmens wird nicht benötigt, ebensowenig das Passepartout. In den Rahmen kommen jetzt der Reihe nach:
+Der lose Innenrahmen-Einsatz des RIBBA-Rahmens wird nicht benötigt, ebensowenig das Passepartout. In den Rahmen kommen jetzt der Reihe nach:
 1. Die vordere, originale Glasplatte
 1. Die Maske, auf Folie/Glas/Plexiglas geklebt
 1. Ein zugeschnittenes Transparentpapier
@@ -112,7 +121,7 @@ Im Prinzip kann man das Ganze auch in größer anfertigen; ich habe es noch nich
 Es gibt beispielsweise einen weiteren „tiefen“ RIBBA-Rahmen mit 50 cm (statt 23 cm) Kantenlänge, der sich anbietet. Das Passepartout darin hätte 30 x 30 cm.
 
 ### Hardware: 
-Man kann entweder den gleichen WS2812-Strip mit 60 LEDs pro Meter nehmen und erhält dann z.B. 25 x 25 (also 625) LEDs — das ist vielleicht etwas viel. Da könnte die Matrix auch etwas kleiner gemacht werden: Ins mitgelieferte Passepartout passen 18 x 18, also immerhin noch 324 LEDs. Oder man greift zu einem Strip mit 30 LEDs pro Meter, von denen dann also maximal 15 x 15 (also 225) untergebracht werden können (im Passepartout nur 9 x 9, das wird schon knapp). Dann ist dementsprechend das Gitter anzupassen, und wir brauchen bei über 35 cm Kantenlänge auch mehr als nur vier Teilstücke (oder einen größeren Drucker). Auch mag es nötig sein, die Höhe des Gitters auf mehr als 10 mm zu erhöhen, damit die größeren Zellen gleichmäßig ausgeleuchtet werden.
+Man kann entweder den gleichen WS2812-Strip mit 60 LEDs pro Meter nehmen und erhält dann z.B. 25 x 25 (also 625) LEDs — das ist vielleicht etwas viel. Da könnte die Matrix auch etwas kleiner gemacht werden: Ins mitgelieferte Passepartout passen 18 x 18, also immerhin noch 324 LEDs. Oder man greift zu einem Strip mit 30 LEDs pro Meter, von denen dann also maximal 15 x 15 (also 225) untergebracht werden können (im Passepartout nur 9 x 9, das wird schon knapp). Dann ist dementsprechend das Gitter anzupassen, und wir brauchen bei über 35 cm Kantenlänge auch mehr als nur vier Teilstücke (oder einen größeren Drucker). Auch mag es nötig sein, die Höhe des Gitters auf mehr als 10 mm zu erhöhen, damit die größeren Zellen gleichmäßig ausgeleuchtet werden. Hier kommt dann auch die Alternative mit dem Kartongitter wieder ins Spiel.
 
 Wichtig bei sehr vielen LEDs: Auf den Stromverbrauch achten, sonst qualmt es irgendwo. Oder in der Software dafür sorgen, dass niemals zu viele LEDs gleichzeitig leuchten.
 
