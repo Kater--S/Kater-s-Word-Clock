@@ -9,6 +9,7 @@
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
+#include <WiFiManager.h>  
 
 Timezone myTZ;
 #endif
@@ -582,6 +583,8 @@ void setup()
     ;  // wait for Serial port to connect. Needed for native USB port only
   }
   Serial.println("WordClock V1.3");
+  
+  WiFiManager wifiManager;
 
   strip.begin();
   strip.show();
@@ -603,8 +606,7 @@ void setup()
   show_text(250);
   delay(1000);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin("Freifunk", "");
+   wifiManager.autoConnect("Katers-WordClock");
   /*while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Connection Failed! Rebooting...");
     delay(5000);
