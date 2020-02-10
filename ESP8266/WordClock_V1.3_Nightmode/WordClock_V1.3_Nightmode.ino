@@ -1,21 +1,29 @@
+// TODO
+// Config (PIN / MQTT / defines) auslagern
+// Code aufräumen / auf platformio switchen
 
-#define CLOCK
-
+#include "config.h"
 
 #ifdef CLOCK
 #include <ezTime.h>
 //#include <WiFi.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <WiFiManager.h>  
-
+#include <Adafruit_NeoPixel.h>
 Timezone myTZ;
 #endif
 
-#include <Adafruit_NeoPixel.h>
 #include "colorconv.h"
+
+#ifdef SPACEAPI
+#include <PubSubClient.h>
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
+boolean spacestatus = false;
+#endif
+
 
 /*
 
@@ -48,21 +56,20 @@ Timezone myTZ;
    58-59  Es ist gleich %hh+1 Uhr
 
    Matrix:
-   x
-   0123456789abc
-  y ESEISTLWARMPY
-  1 GERADEGLEICHZ
-  2 PUNKTETWAKALT
-  3 ZWANZIGZEHNEU
-  4 FÜNFEMINUTENV
-  5 VIERTELPNACHT
-  6 VORTHALBGELFE
-  7 ZWÖLFÜNFZWEIG
-  8 ZEHNEUNACHTAN
-  9 UNDREINSFVIER
-  a SECHSIEBENASS
-  b QUHREZEITWFÜR
-  c SKAFFEESSENDB
+  x=  0123456789abc
+  y=0 ESEISTLWARMPY
+    1 GERADEGLEICHZ
+    2 PUNKTETWAKALT
+    3 ZWANZIGZEHNEU
+    4 FÜNFEMINUTENV
+    5 VIERTELPNACHT
+    6 VORTHALBGELFE
+    7 ZWÖLFÜNFZWEIG
+    8 ZEHNEUNACHTAN
+    9 UNDREINSFVIER
+    a SECHSIEBENASS
+    b QUHREZEITWFÜR
+    c HÜTTEHAUFZUDB
 
    x
    0123456789abc
@@ -99,7 +106,7 @@ const char* matrix[] = {  // only used for debugging output
   "UNDREINSFVIER",
   "SECHSIEBENASS",
   "QUHREZEITWFÜR",
-  "SKAFFEESSENDB"
+  "HÜTTEHAUFZUDB"
 };
 
 const long C_ES       = 0x000002;
@@ -145,9 +152,10 @@ const long C_NASS     = 0x090a04;
 const long C_UHR      = 0x010b03;
 const long C_ZEIT     = 0x050b04;
 const long C_FUER     = 0x0a0b04;
-const long C_SK       = 0x000c02;
-const long C_KAFFEE   = 0x010c06;
-const long C_ESSEN    = 0x060c05;
+const long C_HUE      = 0x000c02;
+const long C_HUETTE   = 0x000c05;
+const long C_AUF      = 0x060c03;
+const long C_ZU       = 0x090c02;
 const long C_DB       = 0x0b0c02;
 
 const int hours[] = { C_12, C_1, C_2, C_3,  C_4,  C_5,  C_6,  C_7,  C_8,  C_9,  C_10,  C_11,  C_12 };
@@ -209,7 +217,7 @@ int panel2strip(int x, int y)
   return (panel_y - y - 1) * panel_x + ( (y & 1) ? (panel_x - x - 1) : x);
 }
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, D2, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, D4, NEO_GRB + NEO_KHZ800);
 
 bool is_day(int h, int m)
 {
@@ -348,6 +356,14 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
   }
+  #ifdef SPACEAPI
+  ledcodes[ledcodes_idx++] = C_HUETTE;
+  if(spacestatus==true) {
+    ledcodes[ledcodes_idx++] = C_AUF;
+  } else {
+    ledcodes[ledcodes_idx++] = C_ZU;
+  }
+  #endif
 }
 
 void clearLEDs()
@@ -576,6 +592,27 @@ void action()
 #endif
 }
 
+#ifdef SPACEAPI
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("arduinoClient", C_MQTTUSER, C_MQTTPASSWORD)) {
+      Serial.println("connected");
+      // ... and resubscribe
+      client.subscribe(C_MQTTTOPIC);
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+#endif
+
 void setup()
 {
   Serial.begin(115200);
@@ -596,7 +633,7 @@ void setup()
 
   ledcodes_idx = 0;
   ledcodes[ledcodes_idx++] = C_DB;
-  ledcodes[ledcodes_idx++] = C_SK;
+  ledcodes[ledcodes_idx++] = C_HUE;
   show_text(250);
   delay(1000);
 
@@ -685,7 +722,29 @@ void setup()
 
   change_colorscheme(1);
 
+#ifdef SPACEAPI
+  client.setServer(C_MQTTSERVER, 1883);
+  client.setCallback(callback);
+#endif
+
 }
+
+#ifdef SPACEAPI
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i=0;i<length;i++) {
+    Serial.print((char)payload[i]);
+  }
+  if(!strncmp((char *)payload, "1", length)) {
+    spacestatus = true;
+  } else {
+    spacestatus = false;
+  }
+  Serial.println();
+}
+#endif
 
 void loop()
 {
@@ -696,5 +755,13 @@ void loop()
 #else
   delay(10);
 #endif
+
   ArduinoOTA.handle();
+#ifdef SPACEAPI
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+#endif
+
 }

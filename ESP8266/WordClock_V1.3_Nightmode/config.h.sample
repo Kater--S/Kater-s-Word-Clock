@@ -1,0 +1,10 @@
+#define CLOCK 1
+#define SPACEAPI 1
+
+#ifdef SPACEAPI
+const char* C_MQTTSERVER = "mqtt.example.org";
+const char* C_MQTTUSER = "username";
+const char* C_MQTTPASSWORD = "password";
+const char* C_MQTTTOPIC = "spacestatus"; // Expects 1 for "auf" and 0 for "zu"
+
+#endif
