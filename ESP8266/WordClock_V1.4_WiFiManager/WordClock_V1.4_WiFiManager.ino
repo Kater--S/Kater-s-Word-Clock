@@ -91,14 +91,14 @@ const char* matrix[] = {  // only used for debugging output
   "GERADEGLEICHZ",
   "PUNKTETWAKALT",
   "ZWANZIGZEHNEU",
-  "FÜNFEMINUTENV",
+  "FUNFEMINUTENV",
   "VIERTELPNACHT",
   "VORTHALBGELFE",
-  "ZWÖLFÜNFZWEIG",
+  "ZWOLFUNFZWEIG",
   "ZEHNEUNACHTAN",
   "UNDREINSFVIER",
   "SECHSIEBENASS",
-  "QUHREZEITWFÜR",
+  "QUHREZEITWFUR",
   "SKAFFEESSENDB"
 };
 
@@ -250,7 +250,7 @@ void encode_time(int h, int m, int s = 0)
     case 2:
       txt = txt + "ist ";
       ledcodes[ledcodes_idx++] = C_IST;
-      if (s == 0) {
+      if ((s >= 0) && (s < 3)) {
         txt = txt + "Punkt ";
         ledcodes[ledcodes_idx++] = C_PUNKT;
       }
@@ -385,7 +385,9 @@ void change_colorscheme(int lvl = 0)
       peak_coord_y[peak] = random(pat_y);
       peak_height[peak] = 50 + random(100);
       peak_reach[peak] = 5 + random(2 * pat_y);
-      Serial.println(String("peak ") + peak + " = pos (" + peak_coord_x[peak] + ", " + peak_coord_y[peak] + "), h " + peak_height[peak] + ", r " + peak_reach[peak]);
+      Serial.println(String("peak ") + peak
+                     + " = pos (" + peak_coord_x[peak] + ", " + peak_coord_y[peak] + "),"
+                     + " h " + peak_height[peak] + ", r " + peak_reach[peak]);
     }
   }
 }
@@ -470,13 +472,10 @@ void set_matrix()
     //int j = i; {
     for (int j = 0; j < MAX_Y; j += 1) {
       Serial.print(String("") + j + " ");
-      //strip.setPixelColor(panel2strip(i + offset_x, j + offset_y), strip.Color(i * brightness / MAX_X, brightness, j * brightness / MAX_X));
-      strip.setPixelColor(panel2strip(i + offset_x, j + offset_y), xy2col(i, j, 20));
+      strip.setPixelColor(panel2strip(i + offset_x, j + offset_y),
+                          xy2col(i, j, 20));
+      //                    strip.Color(i * brightness / MAX_X, brightness, j * brightness / MAX_X));
       strip.show();
-      /*delay(10);
-        strip.setPixelColor(panel2strip(i + offset_x, j + offset_y), 0);
-        strip.show();
-        delay(10);*/
     }
     Serial.println();
   }
@@ -589,7 +588,8 @@ void setup()
   strip.begin();
   strip.show();
 
-  randomSeed(analogRead(0) + millis() + 2); // This is pretty deterministic, so the color scheme will always be the same.
+  randomSeed(analogRead(0) + millis() + 2); 
+  // This is pretty deterministic, so the color scheme will always be the same.
   // Change to another seed value for a different color scheme after your fancy.
   change_colorscheme(1);
   set_matrix();
