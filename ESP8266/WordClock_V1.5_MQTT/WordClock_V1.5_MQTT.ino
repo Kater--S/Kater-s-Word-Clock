@@ -1,7 +1,7 @@
 
 #include "config.h"
 
-#ifdef CLOCK
+#if CLOCK
 #include <ezTime.h>
 //#include <WiFi.h>
 #include <ESP8266WiFi.h>
@@ -13,17 +13,13 @@ Timezone myTZ;
 #endif
 
 
-#ifdef SPACEAPI
+#if SPACESTATUS
 #include <PubSubClient.h>
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
-
-#undef LAYOUT_SPACEAPI
-
 #endif
 
-#define LED_PIN D2
 /*
 
   -- GERMAN VERSION --
@@ -69,7 +65,8 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
     a SECHSIEBENASS
     b QUHREZEITWFÜR
     c HÜTTEHAUFZUDB
-
+ or c SKAFFEESSENDB
+ 
    x
    0123456789abc
    ES IST WAR
@@ -85,6 +82,7 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
    SECHSieben
     UHR ZEIT FÜR
     KAFFEEssen
+of HÜTTE AUFzu
 
    Coding:
    x=4, y=7, len=3 -> 0x040703;
@@ -105,7 +103,11 @@ const char* matrix[] = {  // only used for debugging output
   "UNDREINSFVIER",
   "SECHSIEBENASS",
   "QUHREZEITWFUR",
+#if LAYOUT_SPACESTATUS
   "HUTTEHAUFZUDB"
+#else
+  "SKAFFEESSENDB"
+#endif
 };
 
 const long C_ES       = 0x000002;
@@ -151,7 +153,7 @@ const long C_NASS     = 0x090a04;
 const long C_UHR      = 0x010b03;
 const long C_ZEIT     = 0x050b04;
 const long C_FUER     = 0x0a0b04;
-#ifdef LAYOUT_SPACEAPI
+#if LAYOUT_SPACESTATUS
 const long C_HUE      = 0x000c02;
 const long C_HUETTE   = 0x000c05;
 const long C_AUF      = 0x060c03;
@@ -173,7 +175,7 @@ long ledcodes[15] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int ledcodes_idx = 0;
 String txt;
 
-#ifdef TESTPANEL
+#if TESTPANEL
 
 /*
    temporary matrix panel: 20x15 LEDs, wired differently
@@ -220,10 +222,13 @@ int brightness = day_brightness;
 
 int panel2strip(int x, int y)
 {
+#if TESTPANEL
   // for 20x15 panel on grey eurobox lid
-  //return y * panel_x + ( (y & 1) ? (panel_x - x - 1) : x);
+  return y * panel_x + ( (y & 1) ? (panel_x - x - 1) : x);
+#else
   // for 13x13 panel in RIBBA frame
   return (panel_y - y - 1) * panel_x + ( (y & 1) ? (panel_x - x - 1) : x);
+#endif
 }
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -365,7 +370,7 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
   }
-#ifdef SPACEAPI
+#if SPACESTATUS
   if (spacestatus != -1) {
     ledcodes[ledcodes_idx++] = C_HUETTE;
     if (spacestatus == 1) {
@@ -573,7 +578,7 @@ void show_time(int h, int m, int s = 0)
 int h = 0, m = 0, s = 0, s0 = 0;
 void action()
 {
-#ifdef CLOCK
+#if CLOCK
   s = myTZ.second();
   if (s == s0) return;
   s0 = s;
@@ -613,20 +618,20 @@ void setup()
   strip.begin();
   strip.show();
 
-  randomSeed(analogRead(0) + millis() + 2); 
+  randomSeed(analogRead(0) + millis() + 2);
   // This is pretty deterministic, so the color scheme will always be the same.
   // Change to another seed value for a different color scheme after your fancy.
   change_colorscheme(1);
   set_matrix();
 
   ledcodes_idx = 0;
-#ifdef SPACEAPI
+#if SPACESTATUS
   ledcodes[ledcodes_idx++] = C_HUE;
 #endif
   show_text(250);
   delay(1000);
 
-#ifdef CLOCK
+#if CLOCK
   ledcodes_idx = 0;
   ledcodes[ledcodes_idx++] = C_WAN;
   show_text(250);
@@ -714,27 +719,27 @@ void setup()
 
   change_colorscheme(1);
 
-#ifdef SPACEAPI
+#if SPACESTATUS
   client.setServer(C_MQTTSERVER, 1883);
   client.setCallback(callback);
 #endif
 
 }
 
-#ifdef SPACEAPI
+#if SPACESTATUS
 void reconnect() {
-  const long delta = 60  * 1000;
+  const long delta = 10  * 1000;
   static long lastcalled = 0;
   long thiscall = millis() + delta;
   if (thiscall - lastcalled < delta) return;
   lastcalled = thiscall;
   // just try once
-  Serial.println("Attempting MQTT connection...");
+  Serial.println(String("Attempting MQTT connection to ") + C_MQTTSERVER + "...");
   // Attempt to connect
   if (client.connect("Katers-WordClock", C_MQTTUSER, C_MQTTPASSWORD)) {
     Serial.println("connected");
     // ... and resubscribe
-    client.subscribe(C_MQTTTOPIC);
+    Serial.println(client.subscribe(C_MQTTTOPIC));
   } else {
     Serial.print("failed, rc=");
     Serial.print(client.state());
@@ -760,7 +765,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void loop()
 {
   action();
-#ifdef CLOCK
+#if CLOCK
   events();
   delay(100);
 #else
@@ -768,7 +773,7 @@ void loop()
 #endif
 
   ArduinoOTA.handle();
-#ifdef SPACEAPI
+#if SPACESTATUS
   if (!client.connected()) {
     spacestatus = -1;
     reconnect();
