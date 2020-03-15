@@ -1,0 +1,30 @@
+
+// Set this to 1 to enable regular clock mode. Setting to 0 means test mode.
+#define CLOCK 1
+
+
+// Set the Pin you connected your light strip's Data-in to.
+#define LED_PIN D4
+
+ // Adjust your brightness preferences here:
+const int C_DAY_BRIGHTNESS = 100;
+const int C_NIGHT_BRIGHTNESS = 5;
+const int C_DAY_H = 8;
+const int C_DAY_M = 0;
+const int C_NIGHT_H = 22;
+const int C_NIGHT_M = 00;
+
+// Activate (uncomment) the following line in order to fetch your space's doorstatus via MQTT
+#define SPACESTATUS 1
+
+// Activate (uncomment) the following line if you have the modified stencil layout containing
+// "HÜTTE AUF ZU" in its last line
+//#define LAYOUT_SPACESTATUS
+
+#ifdef SPACESTATUS
+// Configure your MQTT subscription for doorstatus information here
+const char* C_MQTTSERVER = "mqtt.example.org";
+const char* C_MQTTUSER = "username";
+const char* C_MQTTPASSWORD = "password";
+const char* C_MQTTTOPIC = "topic/doorstatus"; // Expects 1 for "auf/open" and 0 for "zu/closed"
+#endif
