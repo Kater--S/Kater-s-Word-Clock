@@ -1,7 +1,3 @@
-// TODO
-// Config (PIN / MQTT / defines) auslagern
-// Code aufräumen / auf platformio switchen
-
 #include "config.h"
 
 #ifdef CLOCK
@@ -17,7 +13,7 @@ Timezone myTZ;
 
 #include "colorconv.h"
 
-#ifdef SPACEAPI
+#ifdef SPACESTATUS
 #include <PubSubClient.h>
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -200,14 +196,7 @@ const int offset_x = 0;
 const int offset_y = 0;
 #endif
 
-const int day_brightness = 100;
-const int night_brightness = 5;
-const int day_h = 8;
-const int day_m = 0;
-const int night_h = 22;
-const int night_m = 00;
-
-int brightness = day_brightness;
+int brightness = C_DAY_BRIGHTNESS;
 
 int panel2strip(int x, int y)
 {
@@ -217,13 +206,13 @@ int panel2strip(int x, int y)
   return (panel_y - y - 1) * panel_x + ( (y & 1) ? (panel_x - x - 1) : x);
 }
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, D4, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(300, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 bool is_day(int h, int m)
 {
   bool ret = false;
-  const int day_hm = (day_h % 24) * 60 + day_m;
-  const int night_hm = (night_h % 24) * 60 + night_m;
+  const int day_hm = (C_DAY_H % 24) * 60 + C_DAY_M;
+  const int night_hm = (C_NIGHT_H % 24) * 60 + C_NIGHT_M;
   int now_hm = (h % 24) * 60 + m;
   if (day_hm < night_hm) {
     return (day_hm < now_hm) && (now_hm < night_hm);
@@ -356,7 +345,7 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
   }
-  #ifdef SPACEAPI
+  #ifdef SPACESTATUS
   ledcodes[ledcodes_idx++] = C_HUETTE;
   if(spacestatus==true) {
     ledcodes[ledcodes_idx++] = C_AUF;
@@ -571,7 +560,7 @@ void action()
   s0 = s;
   m = myTZ.minute();
   h = myTZ.hour();
-  brightness = is_day(h, m) ? day_brightness : night_brightness;
+  brightness = is_day(h, m) ? C_DAY_BRIGHTNESS : C_NIGHT_BRIGHTNESS;
   show_time(h, m, s);
 #else
 #if 1
@@ -592,7 +581,7 @@ void action()
 #endif
 }
 
-#ifdef SPACEAPI
+#ifdef SPACESTATUS
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
@@ -722,14 +711,14 @@ void setup()
 
   change_colorscheme(1);
 
-#ifdef SPACEAPI
+#ifdef SPACESTATUS
   client.setServer(C_MQTTSERVER, 1883);
   client.setCallback(callback);
 #endif
 
 }
 
-#ifdef SPACEAPI
+#ifdef SPACESTATUS
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -757,7 +746,7 @@ void loop()
 #endif
 
   ArduinoOTA.handle();
-#ifdef SPACEAPI
+#ifdef SPACESTATUS
   if (!client.connected()) {
     reconnect();
   }
