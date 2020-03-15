@@ -6,3 +6,5 @@ Plotter/\.DS_Store
 Plotter/LED-Layout\.ai
 
 \.DS_Store
+
+ESP8266/WordClock_V1.5_MQTT/config.h
