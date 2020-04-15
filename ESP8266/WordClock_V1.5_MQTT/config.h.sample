@@ -19,7 +19,7 @@ const int C_NIGHT_M = 00;
 
 // Activate (uncomment) the following line if you have the modified stencil layout containing
 // "HÜTTE AUF ZU" in its last line
-//#define LAYOUT_SPACESTATUS
+//#define LAYOUT_SPACESTATUS 1
 
 #ifdef SPACESTATUS
 // Configure your MQTT subscription for doorstatus information here

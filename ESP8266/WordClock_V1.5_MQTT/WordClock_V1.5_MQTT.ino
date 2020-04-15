@@ -66,7 +66,7 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
     b QUHREZEITWFÜR
     c HÜTTEHAUFZUDB
  or c SKAFFEESSENDB
- 
+
    x
    0123456789abc
    ES IST WAR
@@ -81,8 +81,8 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
    UNDreINS VIER
    SECHSieben
     UHR ZEIT FÜR
-    KAFFEEssen
-of HÜTTE AUFzu
+   HÜTTE AUFzu
+or  KAFFEEssen
 
    Coding:
    x=4, y=7, len=3 -> 0x040703;
@@ -608,6 +608,9 @@ void action()
 void setup()
 {
   Serial.begin(115200);
+  delay(200);
+  Serial.print("\n\n\n\n\n");
+  delay(200);
   while (!Serial) {
     ;  // wait for Serial port to connect. Needed for native USB port only
   }
@@ -637,14 +640,20 @@ void setup()
   show_text(250);
   delay(1000);
 
-  wifiManager.autoConnect("Katers-WordClock");
+  // Use Katers-WordClock-[MAC] as Name for (a) WifiManager AP and (b) OTA hostname
+  char hostname[50];
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  sprintf(hostname, "Katers-WordClock-%02x%02x%02x", mac[3], mac[4], mac[5]);
+  Serial.println(String("hostname = ") + hostname);
+
+  wifiManager.autoConnect(hostname);
 
   //// OTA FUNCTIONS
   //
   //
 
-  // Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname("WordClock");
+  ArduinoOTA.setHostname(hostname);
 
   // No authentication by default
   //ArduinoOTA.setPassword("WC");
