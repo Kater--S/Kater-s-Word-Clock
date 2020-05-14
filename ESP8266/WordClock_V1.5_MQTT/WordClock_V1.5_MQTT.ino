@@ -218,6 +218,9 @@ const int day_m = 0;
 const int night_h = 22;
 const int night_m = 00;
 
+char hostname[50];
+
+
 int brightness = day_brightness;
 
 int panel2strip(int x, int y)
@@ -616,6 +619,12 @@ void setup()
   }
   Serial.println("WordClock V1.5");
 
+  // Use Katers-WordClock-[MAC] as Name for (a) WifiManager AP, (b) OTA hostname, (c) MQTT client name
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  sprintf(hostname, "Katers-WordClock-%02x%02x%02x", mac[3], mac[4], mac[5]);
+  Serial.println(String("hostname = ") + hostname);
+  
   WiFiManager wifiManager;
 
   strip.begin();
@@ -639,13 +648,6 @@ void setup()
   ledcodes[ledcodes_idx++] = C_WAN;
   show_text(250);
   delay(1000);
-
-  // Use Katers-WordClock-[MAC] as Name for (a) WifiManager AP and (b) OTA hostname
-  char hostname[50];
-  uint8_t mac[6];
-  WiFi.macAddress(mac);
-  sprintf(hostname, "Katers-WordClock-%02x%02x%02x", mac[3], mac[4], mac[5]);
-  Serial.println(String("hostname = ") + hostname);
 
   wifiManager.autoConnect(hostname);
 
@@ -745,7 +747,7 @@ void reconnect() {
   // just try once
   Serial.println(String("Attempting MQTT connection to ") + C_MQTTSERVER + "...");
   // Attempt to connect
-  if (client.connect("Katers-WordClock", C_MQTTUSER, C_MQTTPASSWORD)) {
+  if (client.connect(hostname, C_MQTTUSER, C_MQTTPASSWORD)) {
     Serial.println("connected");
     // ... and resubscribe
     Serial.println(client.subscribe(C_MQTTTOPIC));
