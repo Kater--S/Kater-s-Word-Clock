@@ -50,6 +50,21 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
    54-57: Es ... ...... fünf vor %hh+1
    58-59  Es ist gleich %hh+1 Uhr
 
+   Short version:
+
+   00-04: %hh Uhr
+   05-09: fünf nach %hh
+   10-14: zehn nach %hh
+   15-19: viertel nach %hh
+   20-24: zwanzig nach %hh
+   25-29: fünf for halb %hh+1
+   30-34: halb %hh+1
+   35-39: fünf nach halb %hh+1
+   40-44: zwanzig vor %hh+1
+   45-49: viertel vor %hh+1
+   50-54: zehn vor %hh+1
+   55-59: fünf vor %hh+1
+
    Matrix:
   x=  0123456789abc
   y=0 ESEISTLWARMPY
@@ -65,7 +80,7 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
     a SECHSIEBENASS
     b QUHREZEITWFÜR
     c HÜTTEHAUFZUDB
- or c SKAFFEESSENDB
+  or c SKAFFEESSENDB
 
    x
    0123456789abc
@@ -82,7 +97,7 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
    SECHSieben
     UHR ZEIT FÜR
    HÜTTE AUFzu
-or  KAFFEEssen
+  or  KAFFEEssen
 
    Coding:
    x=4, y=7, len=3 -> 0x040703;
@@ -211,12 +226,12 @@ const int offset_x = 0;
 const int offset_y = 0;
 #endif
 
-const int day_brightness = 100;
-const int night_brightness = 5;
-const int day_h = 8;
-const int day_m = 0;
-const int night_h = 22;
-const int night_m = 00;
+const int day_brightness = C_DAY_BRIGHTNESS;
+const int night_brightness = C_NIGHT_BRIGHTNESS;
+const int day_h = C_DAY_H;
+const int day_m = C_DAY_M;
+const int night_h = C_NIGHT_H;
+const int night_m = C_NIGHT_M;
 
 char hostname[50];
 
@@ -252,7 +267,7 @@ bool is_day(int h, int m)
   return ret;
 }
 
-void encode_time(int h, int m, int s = 0)
+void encode_time(int h, int m, int s = 0, bool short_format = false)
 {
   int hh = h % 12;
   hh += (hh ? 0 : 12);
@@ -261,34 +276,39 @@ void encode_time(int h, int m, int s = 0)
   int mm = m;
 
   ledcodes_idx = 0;
-  ledcodes[ledcodes_idx++] = C_ES;
-  txt = String("Es ");
-
-  switch ((mm + 2) % 5)
-  {
-    case 0:
-    case 1:
-      txt = txt + "ist gleich ";
-      ledcodes[ledcodes_idx++] = C_IST;
-      ledcodes[ledcodes_idx++] = C_GLEICH;
-      break;
-    case 2:
-      txt = txt + "ist ";
-      ledcodes[ledcodes_idx++] = C_IST;
-      if (s == 0) {
-        txt = txt + "Punkt ";
-        ledcodes[ledcodes_idx++] = C_PUNKT;
-      }
-      break;
-    case 3:
-    case 4:
-      txt = txt + "war gerade ";
-      ledcodes[ledcodes_idx++] = C_WAR;
-      ledcodes[ledcodes_idx++] = C_GERADE;
-      break;
+  if (short_format) {
+    txt = String("");
+  } else {
+    ledcodes[ledcodes_idx++] = C_ES;
+    txt = String("Es ");
+    switch ((mm + 2) % 5)
+    {
+      case 0:
+      case 1:
+        txt = txt + "ist gleich ";
+        ledcodes[ledcodes_idx++] = C_IST;
+        ledcodes[ledcodes_idx++] = C_GLEICH;
+        break;
+      case 2:
+        txt = txt + "ist ";
+        ledcodes[ledcodes_idx++] = C_IST;
+        if (s == 0) {
+          txt = txt + "Punkt ";
+          ledcodes[ledcodes_idx++] = C_PUNKT;
+        }
+        break;
+      case 3:
+      case 4:
+        txt = txt + "war gerade ";
+        ledcodes[ledcodes_idx++] = C_WAR;
+        ledcodes[ledcodes_idx++] = C_GERADE;
+        break;
+    }
   }
   int hrs = (mm > 30) ? hnext : hh;
-  switch (((mm + 2) % 60) / 5)
+  int mmpart = ((mm + (short_format ? 0 : 2)) % 60) / 5;
+  Serial.println((String)"hrs = " + hrs + ", mm = " + mm + ", mmpart = " + mmpart);
+  switch (mmpart)
   {
     case 0:
       txt = txt + hrs + " Uhr";
@@ -298,16 +318,16 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = C_UHR;
       break;
     case 1:
-      txt = txt + "fünf nach " + hh;
+      txt = txt + "fünf " + (!short_format ? "minuten " : "") + "nach " + hh;
       ledcodes[ledcodes_idx++] = C_FUENF;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_NACH;
       ledcodes[ledcodes_idx++] = hours[hh];
       break;
     case 2:
-      txt = txt + "zehn nach " + hh;
+      txt = txt + "zehn " + (!short_format ? "minuten " : "") + "nach " + hh;
       ledcodes[ledcodes_idx++] = C_ZEHN;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_NACH;
       ledcodes[ledcodes_idx++] = hours[hh];
       break;
@@ -318,16 +338,16 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hh];
       break;
     case 4:
-      txt = txt + "zwanzig nach " + hh;
+      txt = txt + "zwanzig " + (!short_format ? "minuten " : "") + "nach " + hh;
       ledcodes[ledcodes_idx++] = C_ZWANZIG;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_NACH;
       ledcodes[ledcodes_idx++] = hours[hh];
       break;
     case 5:
-      txt = txt + "fünf vor halb " + hnext;
+      txt = txt + "fünf " + (!short_format ? "minuten " : "") + "vor halb " + hnext;
       ledcodes[ledcodes_idx++] = C_FUENF;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_VOR;
       ledcodes[ledcodes_idx++] = C_HALB;
       ledcodes[ledcodes_idx++] = hours[hnext];
@@ -338,17 +358,17 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
     case 7:
-      txt = txt + "fünf nach halb " + hnext;
+      txt = txt + "fünf " + (!short_format ? "minuten " : "") + "nach halb " + hnext;
       ledcodes[ledcodes_idx++] = C_FUENF;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_NACH;
       ledcodes[ledcodes_idx++] = C_HALB;
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
     case 8:
-      txt = txt + "zwanzig vor " + hnext;
+      txt = txt + "zwanzig " + (!short_format ? "minuten " : "") + "vor " + hnext;
       ledcodes[ledcodes_idx++] = C_ZWANZIG;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_VOR;
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
@@ -359,16 +379,16 @@ void encode_time(int h, int m, int s = 0)
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
     case 10:
-      txt = txt + "zehn vor " + hnext;
+      txt = txt + "zehn " + (!short_format ? "minuten " : "") + "vor " + hnext;
       ledcodes[ledcodes_idx++] = C_ZEHN;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_VOR;
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
     case 11:
-      txt = txt + "fünf vor " + hnext;
+      txt = txt + "fünf " + (!short_format ? "minuten " : "") + "vor " + hnext;
       ledcodes[ledcodes_idx++] = C_FUENF;
-      ledcodes[ledcodes_idx++] = C_MINUTEN;
+      if (!short_format) ledcodes[ledcodes_idx++] = C_MINUTEN;
       ledcodes[ledcodes_idx++] = C_VOR;
       ledcodes[ledcodes_idx++] = hours[hnext];
       break;
@@ -567,14 +587,14 @@ void show_text(int subbrightness = 100)
 
 int h0 = 0, m0 = 0;
 
-void show_time(int h, int m, int s = 0)
+void show_time(int h, int m, int s = 0, bool use_short = false)
 {
   if (h != h0 || m != m0)
     change_colorscheme(1);
   h0 = h; m0 = m;
   clearLEDs();
-  encode_time(h, m, s);
-  Serial.println(String() + h + ":" + m + ":" + s + " -> " + txt + "  (" + ledcodes_idx + " Wörter)");
+  encode_time(h, m, s, use_short);
+  Serial.println(String() + (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s + " -> " + txt + "  (" + ledcodes_idx + " Wörter)");
   show_text();
 }
 
@@ -587,8 +607,10 @@ void action()
   s0 = s;
   m = myTZ.minute();
   h = myTZ.hour();
-  brightness = is_day(h, m) ? day_brightness : night_brightness;
-  show_time(h, m, s);
+  bool daytime = is_day(h, m);
+  brightness = daytime ? day_brightness : night_brightness;
+  bool use_short = C_SHORT ? (C_SHORT == 1 ? true : !daytime) : false;
+  show_time(h, m, s, use_short);
 #else
 #if 1
   showtime(h, m, s);
@@ -624,7 +646,7 @@ void setup()
   WiFi.macAddress(mac);
   sprintf(hostname, "Katers-WordClock-%02x%02x%02x", mac[3], mac[4], mac[5]);
   Serial.println(String("hostname = ") + hostname);
-  
+
   WiFiManager wifiManager;
 
   strip.begin();

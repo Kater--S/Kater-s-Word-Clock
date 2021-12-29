@@ -13,6 +13,7 @@ const int C_DAY_H = 8;
 const int C_DAY_M = 0;
 const int C_NIGHT_H = 22;
 const int C_NIGHT_M = 00;
+const int C_SHORT = 2;      //  0 = off, 1 = on, 2 = @night
 
 // Activate (uncomment) the following line in order to fetch your space's doorstatus via MQTT
 #define SPACESTATUS 1
