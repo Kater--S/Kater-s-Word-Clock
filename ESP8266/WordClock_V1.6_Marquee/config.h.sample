@@ -1,0 +1,48 @@
+//
+//  WordClock configuration
+//
+
+#pragma once
+
+// you may set LOG_TELNET here to 1 if you want logging via telnet (Port 23):
+//#define LOG_TELNET  1
+
+// Set this to 1 to enable regular clock mode. Setting to 0 means test mode.
+#define CLOCK 1
+
+// Set the Pin you connected your light strip's Data-in to.
+#define LED_PIN D2
+
+ // Adjust your brightness preferences here:
+const int C_DAY_BRIGHTNESS = 100;
+const int C_NIGHT_BRIGHTNESS = 5;
+const int C_DAY_H = 6;
+const int C_DAY_M = 0;
+const int C_NIGHT_H = 0;
+const int C_NIGHT_M = 0;
+const int C_SHORT = 2;      //  0 = off, 1 = on, 2 = @night
+
+// Activate (Uncomment) the following line in order to fetch your space's doorstatus via MQTT
+#define SPACESTATUS 1
+
+// Activate (Uncomment) the following line in order to listen for messages via MQTT
+#define MARQUEE 1
+
+// Activate (uncomment) the following line if you have the modified stencil layout containing
+// "HÜTTE AUF ZU" in its last line
+//#define LAYOUT_SPACESTATUS 1
+
+#if SPACESTATUS || MARQUEE
+// Configure your MQTT broker connection here
+const char* C_MQTTSERVER = "mqtt.example.org";
+const char* C_MQTTUSER = "username";
+const char* C_MQTTPASSWORD = "password";
+#endif
+
+#if SPACESTATUS
+const char* C_MQTTTOPIC_SPACE = "topic/doorstatus"; // Expects 1 for "AUF"/open and 0 for "ZU"/closed
+#endif
+
+#if MARQUEE
+const char* C_MQTTTOPIC_MSG = "temp/msg";
+#endif
