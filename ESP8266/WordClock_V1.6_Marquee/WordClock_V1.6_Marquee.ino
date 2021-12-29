@@ -960,11 +960,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 #if MARQUEE
   else if (!strcmp(topic, C_MQTTTOPIC_MSG)) {
-    encode_message(scrollbuffer, payload, length);
-    displaymode = DM_MARQUEE;
-    marquee_done = false;
-    for (int i = 0; i < MAX_X; i++) marquee_columns[i] = 0;
-    LogTarget.println((String)"Got new marquee text: " + (char*)scrollbuffer);
+    if (marquee_done) {
+      encode_message(scrollbuffer, payload, length);
+      displaymode = DM_MARQUEE;
+      marquee_done = false;
+      for (int i = 0; i < MAX_X; i++) marquee_columns[i] = 0;
+      LogTarget.println((String)"Got new marquee text: " + (char*)scrollbuffer);
+    } else {
+      LogTarget.println("Still busy displaying a marquee text, ignoring this message");
+    }
   }
 #endif
 
