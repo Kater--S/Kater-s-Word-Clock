@@ -38,6 +38,11 @@ int spacestatus = -1;   // -1 = unknown, 0 = closed, 1 = open
 #if MARQUEE
 const int MAX_MSG_LEN = 1024;
 #include "font.h"
+
+#ifndef MARQUEE_INTRO
+#define MARQUEE_INTRO 0
+#endif
+
 #endif
 
 /*
@@ -261,6 +266,7 @@ int brightness = day_brightness;
 const int DM_INIT = 0;
 const int DM_CLOCK = 1;
 const int DM_MARQUEE = 2;
+const int DM_MARQUEE_INTRO = 3;
 
 int displaymode = DM_INIT;
 
@@ -352,7 +358,7 @@ uint32_t xy2col(int i, int j, int subbrightness = 100)
   int col = 0;
   for (int peak = 0; peak < num_peaks; peak++) {
     // calculate distance in cyclic grid
-    //simple rectangular grid distance
+    //simple rectangular grid (Manhattan) distance
     int a, b;
     a = ((i % MAX_X) + pat_offset_x) % pat_x;
     b = peak_coord_x[peak];
@@ -397,13 +403,21 @@ uint32_t xy2col(int i, int j, subbrightness = 100)
 }
 #endif
 
+uint32_t dim_color(uint32_t col, int bitshift)
+{
+  // MSB is White (unused)
+  uint8_t r = (col >> 16) & 0xff;
+  uint8_t g = (col >>  8) & 0xff;
+  uint8_t b = (col      ) & 0xff;
+  return ((r >> bitshift) << 16) | ((g >> bitshift) << 8) | (b >> bitshift);
+}
+
 void set_matrix(bool show = true)
 {
   int pr = 0;
   LogTarget.println("set_matrix");
   for (int i = 0; i < MAX_X; i += 1) {
     if (pr) LogTarget.print(String(" row ") + i + ": ");
-    //int j = i; {
     for (int j = 0; j < MAX_Y; j += 1) {
       if (pr) LogTarget.print(String("") + j + " ");
       strip.setPixelColor(panel2strip(i + offset_x, j + offset_y),
@@ -419,9 +433,9 @@ void set_matrix(bool show = true)
   }
 }
 
-void set_LED(int i, int j, int subbrightness = 100)
+void set_LED(int i, int j, int subbrightness = 100, uint32_t color = 0)
 {
-  strip.setPixelColor(panel2strip(i + offset_x, (MAX_Y - j - 1) + offset_y), xy2col(i, j, subbrightness));
+  strip.setPixelColor(panel2strip(i + offset_x, (MAX_Y - j - 1) + offset_y), color ? color : xy2col(i, j, subbrightness));
   //strip.show();
 }
 
@@ -649,6 +663,7 @@ uint64_t marqueeDelayTimestamp = 0;
 bool marquee_done = true;
 uint8_t marquee_columns[MAX_X];
 uint16_t scrollDelay = 35;                        // Initial scroll delay
+uint32_t marquee_col = 0;
 
 void nextChar()
 {
@@ -675,7 +690,7 @@ void set_matrix_dots(int subbrightness = 100) {
     uint8_t colpattern = marquee_columns[column];
     for (int bit = 0; bit < 8; bit++) {
       if (colpattern & (1 << bit)) {
-        set_LED(column, 3 + bit, subbrightness);
+        set_LED(column, 3 + bit, subbrightness, marquee_col);
       }
     }
   }
@@ -730,6 +745,42 @@ void show_marquee()
   strip.show();
   change_colorscheme(); // move color map a bit
 }
+
+#if MARQUEE_INTRO
+void show_intro()
+{
+  // CAREFUL! 
+  // Since the animation lights up ALL the LEDs in the matrix, 
+  // we must not exceed the maximum current!
+  // Therefore we dim the non-default color for the animation by a factor of 16, 
+  // whereas the marquee text is shown with "only" a quarter the color values.
+  // If default (mapped) color is used, we specify a subbrightness of 40 %.
+  uint32_t color = dim_color(marquee_col, 3);
+  LogTarget.println("show_intro");
+  clearLEDs();
+  strip.show();
+  for (int j = 0; j < MAX_Y; j += 1) {
+    for (int i = 0; i < MAX_X; i += 1) {
+      strip.setPixelColor(panel2strip(i + offset_x, MAX_Y - 1 - j + offset_y), marquee_col ? color : xy2col(i, j, 40));
+    }
+    strip.show();
+    delay(100);
+  }
+  delay(100);
+  for (int j = 0; j < MAX_Y / 2; j += 1) {
+    delay(150);
+    for (int i = 0; i < MAX_X; i += 1) {
+      strip.setPixelColor(panel2strip(i + offset_x, MAX_Y / 2 + j + offset_y), 0);
+    }
+    for (int i = 0; i < MAX_X; i += 1) {
+      strip.setPixelColor(panel2strip(i + offset_x, MAX_Y / 2 - j + offset_y), 0);
+    }
+    strip.show();
+  }
+
+  displaymode = DM_MARQUEE;
+}
+#endif
 #endif
 
 
@@ -760,6 +811,11 @@ void action()
       // marquee display mode
       show_marquee();
       break;
+#if MARQUEE_INTRO
+    case DM_MARQUEE_INTRO:
+      show_intro();
+      break;
+#endif
 #endif
 
     default:
@@ -961,8 +1017,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 #if MARQUEE
   else if (!strcmp(topic, C_MQTTTOPIC_MSG)) {
     if (marquee_done) {
-      encode_message(scrollbuffer, payload, length);
+      marquee_col = encode_message(scrollbuffer, payload, length);
+#if MARQUEE_INTRO
+      displaymode = DM_MARQUEE_INTRO;
+#else
       displaymode = DM_MARQUEE;
+#endif
       marquee_done = false;
       for (int i = 0; i < MAX_X; i++) marquee_columns[i] = 0;
       LogTarget.println((String)"Got new marquee text: " + (char*)scrollbuffer);

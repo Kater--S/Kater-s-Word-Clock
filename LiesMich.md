@@ -5,25 +5,27 @@
 
 Hier kommt meine persönliche Implementierung einer Word Clock. Ziel war es, möglichst wenig baulichen Aufwand zu haben und die Einzelteile aus dem Bastelfundus zu nehmen oder selbst zu erstellen. Ergänzt habe ich Erfahrungen und Anregungen von Leuten, die die Uhr nachgebaut haben — herzlichen Dank dafür.
 
-Für die Elektronik verwende ich einen WS2812-Strip und ein NodeMCU-Modul (mit einem ESP8266), dazu kommt dann noch ein wenig Kabelmaterial sowie der mehr oder minder obligatorische Angstkondensator und -widerstand, außerdem ein USB-Netzteil mit USB-Kabel. Die „Mechanik“ besteht aus einem RIBBA-Rahmen von IKEA, einem 3D-gedruckten Gitter sowie einer mittels Schneidplotter angefertigten Buchstabenmaske, dazu dann noch ein Transparentpapier als Diffusor und ein paar Klebestreifen. Es gibt kein RTC-Modul und keine Bedienelemente, da die Uhr sich die Zeit automatisch per NTP aus dem Netz holt und ansonsten keine steuerbaren Funktionen hat. Wenn es mal eine Konfigurationsmöglichkeit geben soll, würde ich das als Webserver implementieren (s.u.). Die Hardware selbst hat aber noch reichlich Reserven, so dass man da auch noch eine Menge an Erweiterungen anbauen könnte.
+Für die Elektronik verwende ich einen WS2812-Strip und ein ESP8266-Modul (Wemos D1 mini), dazu kommt dann noch ein wenig Kabelmaterial sowie der mehr oder minder obligatorische Angstkondensator und -widerstand, außerdem ein USB-Netzteil mit USB-Kabel. Die „Mechanik“ besteht aus einem RIBBA-Rahmen von IKEA (oder einem kompatiblen, siehe unten), einem 3D-gedruckten Gitter sowie einer mittels Schneidplotter angefertigten Buchstabenmaske, dazu dann noch ein Transparentpapier als Diffusor und ein paar Klebestreifen. Es gibt kein RTC-Modul und keine Bedienelemente, da die Uhr sich die Zeit automatisch per NTP aus dem Netz holt und ansonsten keine steuerbaren Funktionen hat. Wenn es mal eine Konfigurationsmöglichkeit geben soll, würde ich das als Webserver implementieren (s.u.). Die Hardware selbst hat aber noch reichlich Reserven, so dass man da auch noch eine Menge an Erweiterungen anbauen könnte.
 
 Der zeitliche Aufwand hält sich in Grenzen, mit etwas Routine ist eine Uhr in deutlich unter zwei Stunden fertig (3D-Druckzeit nicht mitgerechnet, das dauert bei mir etwas über drei Stunden). Wenn man alles zum ersten Mal macht, braucht es sicher etwas länger, ist aber auch in unter vier Stunden erledigt.
 
 ## Stückliste
 1. IKEA RIBBA Rahmen (23 cm Höhe und Breite, tiefe Version mit 4,5 cm)
+    - inzwischen gibt es den Artikel bei IKEA nur eingeschränkt oder gar nicht mehr, ersatzweise gehen evtl. die Nachfolgermodelle.
+    - bei Nanu-Nana gibt es ebenfalls einen kompatiblen Rahmen.
 1. NodeMCU-Modul ESP8266 (o.ä.; siehe Text)
 1. optional: Breadboard(s) für die Schaltung
 1. WS2812-LED-Strip mit 60 LEDs/m; selbstklebend, weißes Trägermaterial ohne Beschichtung oder Silikonschlauch; 169 LEDs werden gebraucht
-1. Widerstand 470 Ω
-1. Elko mind. 1000 µF / 16 V
+1. Widerstand 470 Ω (unbedingt)
+1. Elko mind. 1000 µF / 16 V (eventuell; kann auch weggelassen werden, je nach Qualität des Netzteils)
 1. USB-Netzteil (2 A) und Micro-USB-Kabel
 1. geplottete Maske auf Folie/Glas/Plexiglas
 1. ggf. Transparentpapier (23 cm x 23 cm)
-1. gedrucktes Gitter
+1. 3D-gedrucktes Gitter
 1. Kabel, Montagematerial (Klebestreifen u.ä.)
 
 ## Firmware
-Ich habe mal sämtliche Zwischenstufen der Firmware ins Repository gepackt (unter `ESP8266`), damit man die Entwicklungsschritte nachvollziehen kann, wenn man denn möchte. Ansonsten einfach die höchste Version verwenden, das ist derzeit `WordClock_V1.4_WiFiManager`.
+Ich habe mal sämtliche Zwischenstufen der Firmware ins Repository gepackt (unter `ESP8266`), damit man die Entwicklungsschritte nachvollziehen kann, wenn man denn möchte. Ansonsten einfach die höchste Version verwenden, das ist derzeit `WordClock_V1.6_Marquee`.
 
 Beim allerersten Start wird die verwendete WiFiManager-Bibliothek keinen WLAN-Zugang haben und öffnet daher einen eigenen Access Point namens "Katers-WordClock" (ohne WLAN-Passwort). Wenn man sich mit PC oder Smartgerät dort anmeldet, kann man sein WLAN dort auswählen und das Passwort hinterlegen. Die Uhr merkt sich den Zugang im EEPROM und verwendet ihn fortan automatisch beim Start.
 
@@ -105,6 +107,14 @@ Der lose Innenrahmen-Einsatz des RIBBA-Rahmens wird nicht benötigt, ebensowenig
 
 Die Rückwand wird dann schließlich im Rahmen befestigt, etwa mit Klebestreifen oder Heißkleber oder den vorhandenen Blechstreifen, die nach innen versetzt werden müssten. Man könnte sich auch ordentliche 3D-Winkel anfertigen, die obendrein die Elektronik aufnehmen können.
 
+## Features
+Mit der Zeit ist das eine oder andere Feature hinzugekommen. So gibt es nach der Basisversion 1.0 jetzt folgende Erweiterungen:
+- 1.1 OTA: Hier wurde die Möglichkeit vorgesehen, die Software "over the air" aus der Arduino-Umgebung direkt auf eine Uhr zu flashen. Einfach die Uhr über ihre IP-Adresse auswählen anstelle der seriellen Verbindung (Tools → Port → Network Port).
+- 1.2 Startinfos: Beim Start gibt die Uhr Informationen über die einzelnen Stufen des Startvorgangs (WAN: Netzwerkverbindung, ZEIT: Verbindung zum Zeitserver, DE: Standortbestimmung).
+- 1.3 Nightmode: Die Uhr kann nachts die Helligkeit reduzieren. Die beiden Umschaltzeiten sowie die Helligkeitslevel Tag/Nacht können in der `config.h` konfiguriert werden.
+- 1.4 WiFiManager: Die WLAN-Zugangsdaten müssen nicht mehr in der `config.h`angegeben werden, sondern können interaktiv konfiguriert werden – siehe oben.
+- 1.5 MQTT: Es kann ein Doorstatus angezeigt werden. Dazu müssen die Zugangsinformationen für einen MQTT-Broker sowie das dazugehörige Topic konfiguriert werden. Über die Konstante `LAYOUT_SPACESTATUS` kann festgelegt werden, ob eine dafür angepasste Schablone montiert ist; anderenfalls werden nur einzelne LEDs hierfür verwendet. Hier sind ggf. spezifische Anpassungen notwendig, da das Setup für die Hackerhütte des c3RE in Recklinghausen ausgelegt ist.
+- 1.6 Marquee: Ein zweites MQTT-Topic kann festgelegt werden, über das der Uhr Textnachrichten gesendet werden können. Diese werden (einmalig) als Laufschrift auf der LED-Matrix angezeigt. Danach wechselt die Anzeige wieder in den Wortuhr-Modus. Weitere Nachrichten, die noch während der Laufschrift-Anzeige eintreffen, werden ignoriert. Optional kann vor dem Lauftext eine Intro-Animation gezeigt werden. Wenn der Text mit "`!#xxyyzz`" beginnt, setzt dies den Farbwert für die Anzeige; ansonsten wird der übliche Farbverlauf verwendet.
 
 ## Erweiterungen
 Wie schon erwähnt, für Hardwareerweiterungen sind noch jede Menge Ressourcen frei, softwareseitig sowieso. Ein paar Ideen:

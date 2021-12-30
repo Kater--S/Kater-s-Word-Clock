@@ -260,9 +260,10 @@ void calculate_font_index()
   LogTarget.println((String)"font_index ready.");
 }
 
-void encode_message(uint8_t* text, byte* payload, int length)
+uint32_t encode_message(uint8_t* text, byte* payload, int length)
 {
   const int pr = 0; // debug prints
+  uint32_t marquee_col = 0;
 
   if (!font_index) {
     LogTarget.println((String)"Need to calculate font_index first!");
@@ -286,7 +287,15 @@ void encode_message(uint8_t* text, byte* payload, int length)
       sprintf(tmp, "0x%.2X = '%c' -> ", b, b);
       LogTarget.print(tmp);
     }
-    if ((b & 0b10000000) == 0) {                    // 7-bit ASCII
+    if (i == 1 && b == '!') {   // parameter escape
+      LogTarget.println("parameter escape");
+      if ((i+6) < length && payload[i] == '#') {
+        // color code (6x hex digit)
+        i++;
+        marquee_col = strtol( (const char*)&(payload[i]), NULL, 16);
+        i += 6;
+      }
+    } else if ((b & 0b10000000) == 0) {                    // 7-bit ASCII
       if (pr) LogTarget.println("ASCII");
       text[j++] = b;
 
@@ -443,4 +452,6 @@ void encode_message(uint8_t* text, byte* payload, int length)
     text[j + i] = 32; // space
   }
   text[j + trailer_len] = 0;
+
+  return marquee_col;
 }
