@@ -25,12 +25,14 @@ const int C_SHORT = 2;      //  0 = off, 1 = on, 2 = @night
 // Activate (Uncomment) the following line in order to fetch your space's doorstatus via MQTT
 #define SPACESTATUS 1
 
-// Activate (Uncomment) the following line in order to listen for messages via MQTT
-#define MARQUEE 1
-
 // Activate (uncomment) the following line if you have the modified stencil layout containing
 // "HÜTTE AUF ZU" in its last line
 //#define LAYOUT_SPACESTATUS 1
+
+// Activate (Uncomment) the following line in order to listen for messages via MQTT
+#define MARQUEE 1
+// Activate (Uncomment) the following line in order to play an intro animation before displaying marquee text
+#define MARQUEE_INTRO 1
 
 #if SPACESTATUS || MARQUEE
 // Configure your MQTT broker connection here

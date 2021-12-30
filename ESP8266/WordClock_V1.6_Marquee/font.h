@@ -292,7 +292,10 @@ uint32_t encode_message(uint8_t* text, byte* payload, int length)
       if ((i+6) < length && payload[i] == '#') {
         // color code (6x hex digit)
         i++;
+        byte nextbyte = payload[i+6];
+        payload[i+6] = 0;         // temporary string end mark
         marquee_col = strtol( (const char*)&(payload[i]), NULL, 16);
+        payload[i+6] = nextbyte;  // restore string
         i += 6;
       }
     } else if ((b & 0b10000000) == 0) {                    // 7-bit ASCII

@@ -755,8 +755,8 @@ void show_intro()
   // Therefore we dim the non-default color for the animation by a factor of 16, 
   // whereas the marquee text is shown with "only" a quarter the color values.
   // If default (mapped) color is used, we specify a subbrightness of 40 %.
-  uint32_t color = dim_color(marquee_col, 3);
   LogTarget.println("show_intro");
+  uint32_t color = dim_color(marquee_col, 3);
   clearLEDs();
   strip.show();
   for (int j = 0; j < MAX_Y; j += 1) {
@@ -1006,16 +1006,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   LogTarget.println();
 
+  bool topic_ok = false;
+  
+#if SPACESTATUS
   if (!strcmp(topic, C_MQTTTOPIC_SPACE)) {
+    topic_ok = true;
     if (!strncmp((char *)payload, "1", length)) {
       spacestatus = 1;
     } else {
       spacestatus = 0;
     }
   }
+#endif
 
 #if MARQUEE
-  else if (!strcmp(topic, C_MQTTTOPIC_MSG)) {
+  if (!strcmp(topic, C_MQTTTOPIC_MSG)) {
+    topic_ok = true;
     if (marquee_done) {
       marquee_col = encode_message(scrollbuffer, payload, length);
 #if MARQUEE_INTRO
@@ -1032,7 +1038,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 #endif
 
-  else {
+  if (!topic_ok) {
     LogTarget.println((String)"Unknown topic: " + topic);
   }
 }
