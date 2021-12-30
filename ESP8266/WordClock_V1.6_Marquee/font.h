@@ -424,6 +424,7 @@ void encode_message(uint8_t* text, byte* payload, int length)
   }
 
   // fill undefined characters with placeholder glyph
+  // j == text length
   for (int i = 0; i < j; i++) {
     uint8_t asc = text[i] - 32;
     uint16_t idx = pgm_read_word(&(font_index[asc]));
@@ -433,4 +434,13 @@ void encode_message(uint8_t* text, byte* payload, int length)
       text[i] = 0x7F;
     }
   }
+
+  // add trailer with space glyphs
+  int space_left = MAX_MSG_LEN - j;
+  const int MAX_TRAILER_LEN = 5;
+  int trailer_len = min(MAX_TRAILER_LEN, MAX_MSG_LEN - (j + 1));
+  for (int i = 0; i < trailer_len; i++) {
+    text[j + i] = 32; // space
+  }
+  text[j + trailer_len] = 0;
 }
