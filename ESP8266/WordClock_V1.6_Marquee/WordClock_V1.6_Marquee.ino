@@ -1,6 +1,8 @@
 
 #include "config.h"
 
+#define VERSION "1.6"
+
 #if CLOCK
 #include <ezTime.h>
 //#include <WiFi.h>
@@ -749,10 +751,10 @@ void show_marquee()
 #if MARQUEE_INTRO
 void show_intro()
 {
-  // CAREFUL! 
-  // Since the animation lights up ALL the LEDs in the matrix, 
+  // CAREFUL!
+  // Since the animation lights up ALL the LEDs in the matrix,
   // we must not exceed the maximum current!
-  // Therefore we dim the non-default color for the animation by a factor of 16, 
+  // Therefore we dim the non-default color for the animation by a factor of 16,
   // whereas the marquee text is shown with "only" a quarter the color values.
   // If default (mapped) color is used, we specify a subbrightness of 40 %.
   LogTarget.println("show_intro");
@@ -844,6 +846,24 @@ void action()
 #endif
 }
 
+void info_marquee(const char* message, bool intro = false)
+{
+#if MARQUEE
+  while (!marquee_done) {
+    /* wait */
+  }
+  marquee_col = encode_message(scrollbuffer, (byte*)message, strlen(message));
+#if MARQUEE_INTRO
+  displaymode = intro ? DM_MARQUEE_INTRO : DM_MARQUEE;
+#else
+  displaymode = DM_MARQUEE;
+#endif
+  marquee_done = false;
+  for (int i = 0; i < MAX_X; i++) marquee_columns[i] = 0;
+  LogTarget.println((String)"Got new marquee infotext: " + (char*)scrollbuffer);
+#endif
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -853,7 +873,7 @@ void setup()
   while (!Serial) {
     ;  // wait for LogTarget port to connect. Needed for native USB port only
   }
-  LogTarget.println("WordClock V1.5");
+  LogTarget.println("WordClock " VERSION);
 
 #if CLOCK
   // Use Katers-WordClock-[MAC] as Name for (a) WifiManager AP, (b) OTA hostname, (c) MQTT client name
@@ -868,11 +888,22 @@ void setup()
   strip.begin();
   strip.show();
 
-  randomSeed(analogRead(0) + millis() + 2);
+  uint32_t seed;
+
   // This is pretty deterministic, so the color scheme will usually be the same.
   // Change to another seed value for a different color scheme after your fancy.
-  change_colorscheme(1);
-  set_matrix();
+  //seed = analogRead(0) + millis() + 2;
+
+  // you can use this to test several seed values:
+  for (seed = 505; seed <= 505; seed++) {   // 505 is quite nice, 507 also (and many more, YMMV)
+    LogTarget.println((String)"random seed 1 = " + seed);
+    randomSeed(seed);
+    change_colorscheme(1);
+    set_matrix();
+    //delay(5000);
+  }
+
+
 
   ledcodes_idx = 0;
 #if SPACESTATUS
@@ -961,7 +992,9 @@ void setup()
     LogTarget.println(String("Error: ") + errorString());
   }
 
-  randomSeed(analogRead(0) + millis()); // This will be definitely non-deterministic as it includes network timing.
+  seed = analogRead(0) + millis();
+  LogTarget.println((String)"random seed 2 = " + seed);
+  randomSeed(seed); // This will be definitely non-deterministic as it includes network timing.
 #endif
 
   change_colorscheme(1);
@@ -972,6 +1005,8 @@ void setup()
 #endif
 
   displaymode = DM_CLOCK;
+
+  info_marquee(((String)" Katers WordClock " VERSION "    IP " + WiFi.localIP().toString()).c_str());
 }
 
 #if CLOCK && (SPACESTATUS || MARQUEE)
@@ -1007,7 +1042,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   LogTarget.println();
 
   bool topic_ok = false;
-  
+
 #if SPACESTATUS
   if (!strcmp(topic, C_MQTTTOPIC_SPACE)) {
     topic_ok = true;
